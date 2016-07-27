@@ -1,0 +1,13 @@
+State,Compound,PHA,NCA
+Nebraska,Microcystin aggregate,,20
+Ohio,microcystin-LR,6,20
+,anatoxin-a,80,300
+,saxitoxin,0.8,3
+,cylindrospermopsin,5,20
+California,microcystin,0.8,
+,anatoxin-a,90,
+,cylindrospermopsin,4,
+Indiana,microcystin-LR,4,20
+,cylindrospermopsin,,5
+Vermont,microcystin-LR,,6
+,anatoxin-a,,10
