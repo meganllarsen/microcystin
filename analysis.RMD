@@ -11,9 +11,9 @@ geometry: margin = 0.75in
 ---
 
 ```{r setup-opts, include = FALSE}
-setwd("C:/Users/meglarse/GitHub/microcystins/")
+setwd("C:/Users/meglarse/GitHub/microcystin/")
 
-knitr::opts_chunk$set(fig.width=6, fig.height=6, 
+knitr::opts_chunk$set(fig.width=7, fig.height=6, 
                       echo = FALSE, warning = FALSE, message = FALSE)
 
 require(ggplot2);require(gridExtra)
@@ -130,7 +130,7 @@ all.map1 <- ggmap(all.stamen1, extent = "panel",legend = "right") +
              pch = 22, col = "black", cex = 3) +
   xlab("Longitude") + ylab("Latitude") +
   theme(panel.border = element_rect(fill = NA))
-print(all.map1)
+#print(all.map1)
 
 all.stamen2 <- get_map(location = c( -96.487705,41.188520), zoom = 9,
                        maptype = "toner", source = "stamen")
@@ -142,7 +142,7 @@ all.map2 <- ggmap(all.stamen2, extent = "panel",legend = "right") +
              pch = 22, col = "black", cex = 3) +
   xlab("Longitude") + ylab("Latitude") +
   theme(panel.border = element_rect(fill = NA))
-print(all.map2)
+#print(all.map2)
 
 grid.arrange(all.map1,all.map2, ncol = 2)
 ```
@@ -174,8 +174,46 @@ pawnee.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
             nudge_y = -0.003, col = "black", cex = 1.5) +
   xlab("Longitude") + ylab("Latitude") +
   theme(panel.border = element_rect(fill = NA))
-print(pawnee.map)
+#print(pawnee.map)
 ```
+
+```{r ggmap-fremont}
+fremont.stamen <- get_map(location = c(-96.548760, 41.438679), zoom = 12,
+                       maptype = "toner", source = "stamen")
+
+fremont.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
+            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 3) +
+  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
+            nudge_y = -0.003, col = "black", cex = 1.5) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+#print(fremont.map)
+```
+
+
+```{r ggmap-carter}
+carter.stamen <- get_map(location = c(-95.915425, 41.302826), zoom = 12,
+                       maptype = "toner", source = "stamen")
+
+carter.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
+            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 3) +
+  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
+            nudge_y = -0.003, col = "black", cex = 1.5) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+#print(carter.map)
+```
+
 
 \newpage
 
