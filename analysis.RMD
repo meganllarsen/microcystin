@@ -1,11 +1,10 @@
 ---
 title: "Methodological analysis of algal toxins"
 subtitle: "Comparing ELISA and LC/MS methods for toxin production"
-author: "Megan L. Larsen, PhD"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   pdf_document:
     highlight: tango
+    fig_caption: true
 fontsize: 11pt
 geometry: margin = 0.75in
 ---
@@ -13,19 +12,14 @@ geometry: margin = 0.75in
 ```{r setup-opts, include = FALSE}
 setwd("C:/Users/meglarse/GitHub/microcystin/")
 
-knitr::opts_chunk$set(fig.width=7, fig.height=6, 
+knitr::opts_chunk$set(fig.width=7, fig.height=4,
                       echo = FALSE, warning = FALSE, message = FALSE)
 
 require(ggplot2);require(gridExtra)
 theme_set(theme_bw())
 
+
 ```
-NOTES:
-2016-07-26
-  added new maps for regional area, and updated individual locations
-  added air temperature data from NOAA
-  created plots for the microcystins data
-  started microcystin analysis
 
 
 # Project Summary
@@ -34,45 +28,212 @@ NOTES:
 
 **Collaborators**
 
-*Daniel D. Snow, PhD*, University of Nebraska-Lincoln Water Sciences Center
+Megan L. Larsen and Daniel D. Snow
+  *University of Nebraska-Lincoln Water Sciences Center*
 
 **Project questions**
 
-1. 
+1. What are the temporal patterns of microcystins in the reservoir systems?
+  -- Focus on microcystins with coupled lake monitoring data available in Storet 
+
+2. What are the temporal patterns in physical, chemical, and biological characteristics of Nebraska Lakes?
+  -- Incorporate information  from the Ambient Lake Monitoring programs with NDEQ with microcystins
+  -- make note of lake treatments
+3. How do different analytical methods (ELISA vs. LC/MS) compare for the detection of algal toxins?
+  -- Total concentration
+  -- Specificity (ELISA = broad; LC/MS = analyte specific)
+  -- detection of other cyanotoxins: Many programs have regulations for other toxins (Ohio)
 
 **List of abbrevations**
 
   NDEQ: Nebraska Department of Environmental Quality
-  US EPA: United States Environmental Protection Agency
-  US COE: United States Army Corp of Engineers
+  
+  USEPA: United States Environmental Protection Agency
+  
+  USACOE: United States Army Corp of Engineers
+  
   USGS: United States Geological Survey
+  
   NOAA: National Oceanic and Atmospheric Administration
 
 \newpage
 \tableofcontents
 \newpage
 
-# Material and Methods
+# Materials and Methods
 
 ## Sample collection and analysis
-***Reservior and monitoring programs***
+###Reservior and monitoring programs
+Fifty-four lakes and reservoirs (herein referred to as lakes) across the state of Nebraksa were sampled for total microcystin concentration as part of the Nebraska Department of Environmental Quality (NDEQ) Beach Monitoring program (BMP) between 2004 - 2014. 
+These ecosystems are part of several other lake monitoring programs conducted by the NDEQ (Ambient Lake Monitoring Program), United States Army Corp of Engineers (USACOE), United States Geological Survey (USGS), and United States Environmental Protection Agency (USEPA). For our methodological comparision of microcystin concentrations, we focused on samples collected from Pawnee Lake (Lancaster County), Carter Lake (Douglas County), and Fremont 20 Lake (Dodge County). 
+
 Pawnee Lake (Lancaster County, Nebraska) is one of X freshwater ecosystems consisently monitored for algal toxins and coliform bacteria by the NDEQ over the last decade as part of the Ambient Lake Monitoring Program. 
 Pawnee Lake was formed as an irrigation reservoir (?) in 19XX by the GROUP by adding an earthen dam at the southeast corner.
 Chemical and physical traits of Pawnee Lake are monitored by the NDEQ, USCOE, and USGS with data publically available from the National Water Quality Database
 Climatic data for the area was obtained from NOAA.
 
-***Microcystin sample collection and analysis***
-NDEQ personnel collect **grab** samples from each of the two swimming beaches to monitor concentration levels of microcystins, cyclic peptides produced by the cyanobacteria *Microcystis*, with an ELISA ADDA Kit. 
-The NDEQ closes a beach or lake if the concentration of the toxin is equal to or higher than 20 ug/ul.
+[More information about Fremont 20 and Carter]
 
+```{r}
+require(ggmap)
+#Make the map object; keep in mind that the map is created using layers
 
-```{r make-maps, include = FALSE, fig.cap="Pawnee Lake, NE, USA. Map data was retrieved from Nebraska Maps and NDEQ"}
+#Import shape files downloaded from Nebraska Map
+
+# NDEQ beach sampling
+ndeq.stn <- read.csv("./data/ndeq_station.csv", header = TRUE)
+smp.points <- read.csv("./data/sitedescriptions.csv")
+smp.points$mic.lab <- c("34b", "34a","8","16a","16b")
+other.smpts <- read.csv("./data/station.csv")
+noaa.dat <- read.csv("./data/noaa_data.csv", header = TRUE)
 
 #load libraries for chunk
 library(maps);library(mapdata)
 library(maptools) # for shapefiles
-library(scales)   #for transparency
-library(mapplots)
+#library(scales)   #for transparency
+#library(mapplots)
+#library(rgdal)
+
+#xcoords = c(-96.90,-96.85); ycoords = c(40.83,40.865)
+
+```
+
+```{r NDEQsites, fig.caption = "NDEQ microcystin sampling sites.", fig.width=4, fig.height=2, include = FALSE}
+#Make Map
+map(database = "state", 
+    regions = "nebraska", 
+    col="white", fill=TRUE, border = "grey")
+points(ndeq.stn$LongitudeMeasure, ndeq.stn$LatitudeMeasure, pch = 21, col = "grey", bg = "black",cex = 1.5)
+points(smp.points$Longitude, smp.points$Latitude, cex = 2, bg = 'red', pch = 21)
+
+```
+
+```{r ggmap-all}
+all.stamen1 <- get_map(location = c( -96.487705,41.188520), zoom = 7,
+                       maptype = "toner", source = "stamen")
+
+all.map1 <- ggmap(all.stamen1, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 3) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+#print(all.map1)
+
+all.stamen2 <- get_map(location = c( -96.487705,41.188520), zoom = 9,
+                       maptype = "toner", source = "stamen")
+
+all.map2 <- ggmap(all.stamen2, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 3) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+print(all.map2)
+
+#grid.arrange(all.map1,all.map2, ncol = 2)
+```
+
+
+```{r ggmap-pawnee}
+require(ggmap)
+#Make the map object; keep in mind that the map is created using layers
+
+pawnee.stamen <- get_map(location = c(-96.825766, 40.854149), zoom = 12,
+                       maptype = "toner", source = "stamen")
+pawnee.osm <- get_map(location = c(-96.825766, 40.854149), zoom = 12,
+                       source = "osm")
+
+pawnee.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  #geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
+  #          nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 2) +
+  #geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
+   #         nudge_y = -0.003, col = "black", cex = 1.5) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+#print(pawnee.map)
+```
+
+```{r ggmap-fremont}
+fremont.stamen <- get_map(location = c(-96.548760, 41.438679), zoom = 14,
+                       maptype = "toner", source = "stamen")
+
+fremont.map <- ggmap(fremont.stamen, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
+            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 3) +
+  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
+            nudge_y = -0.003, col = "black", cex = 1.5) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+#print(fremont.map)
+```
+
+
+```{r ggmap-carter}
+carter.stamen <- get_map(location = c(-95.915425, 41.302826), zoom = 14,
+                       maptype = "toner", source = "stamen")
+
+carter.map <- ggmap(carter.stamen, extent = "panel",legend = "right") +
+  geom_point(data = smp.points, aes(Longitude, Latitude), 
+             col = "red", pch = 19, cex =3) +
+  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
+            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
+  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
+             pch = 22, col = "black", cex = 3) +
+  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
+            nudge_y = -0.003, col = "black", cex = 1.5) +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.border = element_rect(fill = NA))
+#print(carter.map)
+```
+
+```{r include = FALSE}
+grid.arrange(pawnee.map, fremont.map, carter.map, ncol = 3)
+```
+
+\newpage
+
+
+### Algal toxin analysis
+
+```{r}
+# Insert Table of Microcystin congeners and microcystin molecule
+
+
+
+```
+
+NDEQ personnel collected surface samples from lake swimming beaches [details to be added]; samples were processed for total/dissolved (?) microcystin concentration with enzyme-linked immunosorbent assays (ELISA; Abraxis -adda specific). 
+ELISA "is non-specific and reported concentrations potentially include multivariante, degradates, and precursors; thus, the entire toxin class is referred to when discussing ELISA results" (From Grahm et al 2010).
+[ELISA method: four paramter curve fit?]
+
+[Who collected samples for LC/MS/MS] collected [sample location] samples were processed for specific cyanotoxins (microcystin-LA, microcystin-LF, microcystin-LR, microcystin-RR, microcystin-LW, anatoxin-a, cylindrospermopsin) were quantified by direct-inject multianalyte liquid chromatography/tandem mass spectrometry (LC/MS/MS) method. [Detection limit/specifics]. We report total microcystin concentrations as the sum of the five individual microcystin congeners following correction for molecular cross-reactivity (Loftin et al 2008). 
+
+We evalutated the relationship between analytical methods for microcystin quanitification with Spearman-Rank correlation in `r version$version.string`.   
+
+\newpage
+
+### 2005 Nebraska Landuse and watersheds
+
+TO BE ADDED FROM GIS ANALYSIS
+
+```{r make-maps, eval = FALSE, include = FALSE, fig.cap=""}
+
+#load libraries for chunk
+#library(maps);library(mapdata)
+#library(maptools) # for shapefiles
+#library(scales)   #for transparency
+#library(mapplots)
 library(rgdal)
 
 #Make the map object; keep in mind that the map is created using layers
@@ -82,8 +243,7 @@ nrd <- readShapePoly("map_data/NRD/NRD.shp")
 majlakes <- readShapePoly("map_data/MajorLake/MajorLake.shp")
   #pawnee <- majlakes[majlakes$GNIS_Name == "Pawnee Lake",]
 majstream <- readShapeLines("map_data/MajorStream/MajorStream.shp")
-smp.points <- read.csv("./data/sitedescriptions.csv")
-other.smpts <- read.csv("./data/station.csv")
+lnd <- readShapePoly("map_data/NE-landuse/2005_nebraska_landuse.shp")
 
 xcoords = c(-96.90,-96.85); ycoords = c(40.83,40.865)
 
@@ -110,127 +270,17 @@ text("dam", x = -96.86, y = 40.84, col = "grey25")
 
 ```
 
-```{r ggmap-all}
-require(ggmap)
-#Make the map object; keep in mind that the map is created using layers
-
-#Import shape files downloaded from Nebraska Map
-smp.points <- read.csv("./data/sitedescriptions.csv")
-smp.points$mic.lab <- c("34b", "34a","8","16a","16b")
-other.smpts <- read.csv("./data/station.csv")
-noaa.dat <- read.csv("./data/noaa_data.csv", header = TRUE)
-
-all.stamen1 <- get_map(location = c( -96.487705,41.188520), zoom = 7,
-                       maptype = "toner", source = "stamen")
-
-all.map1 <- ggmap(all.stamen1, extent = "panel",legend = "right") +
-  geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
-  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
-  xlab("Longitude") + ylab("Latitude") +
-  theme(panel.border = element_rect(fill = NA))
-#print(all.map1)
-
-all.stamen2 <- get_map(location = c( -96.487705,41.188520), zoom = 9,
-                       maptype = "toner", source = "stamen")
-
-all.map2 <- ggmap(all.stamen2, extent = "panel",legend = "right") +
-  geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
-  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
-  xlab("Longitude") + ylab("Latitude") +
-  theme(panel.border = element_rect(fill = NA))
-#print(all.map2)
-
-grid.arrange(all.map1,all.map2, ncol = 2)
-```
-
-
-```{r ggmap-pawnee}
-require(ggmap)
-#Make the map object; keep in mind that the map is created using layers
-
-#Import shape files downloaded from Nebraska Map
-smp.points <- read.csv("./data/sitedescriptions.csv")
-smp.points$mic.lab <- c("34b", "34a","8","16a","16b")
-other.smpts <- read.csv("./data/station.csv")
-noaa.dat <- read.csv("./data/noaa_data.csv", header = TRUE)
-
-pawnee.stamen <- get_map(location = c(-96.825766, 40.854149), zoom = 12,
-                       maptype = "toner", source = "stamen")
-pawnee.osm <- get_map(location = c(-96.825766, 40.854149), zoom = 12,
-                       source = "osm")
-
-pawnee.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
-  geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
-  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
-            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
-  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
-  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
-            nudge_y = -0.003, col = "black", cex = 1.5) +
-  xlab("Longitude") + ylab("Latitude") +
-  theme(panel.border = element_rect(fill = NA))
-#print(pawnee.map)
-```
-
-```{r ggmap-fremont}
-fremont.stamen <- get_map(location = c(-96.548760, 41.438679), zoom = 12,
-                       maptype = "toner", source = "stamen")
-
-fremont.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
-  geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
-  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
-            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
-  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
-  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
-            nudge_y = -0.003, col = "black", cex = 1.5) +
-  xlab("Longitude") + ylab("Latitude") +
-  theme(panel.border = element_rect(fill = NA))
-#print(fremont.map)
-```
-
-
-```{r ggmap-carter}
-carter.stamen <- get_map(location = c(-95.915425, 41.302826), zoom = 12,
-                       maptype = "toner", source = "stamen")
-
-carter.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
-  geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
-  geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
-            nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
-  geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
-  geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
-            nudge_y = -0.003, col = "black", cex = 1.5) +
-  xlab("Longitude") + ylab("Latitude") +
-  theme(panel.border = element_rect(fill = NA))
-#print(carter.map)
-```
-
-
-\newpage
-
-## Statistical analysis
 
 \newpage
 
 # Results
 
-Data for this project was collected from Pawnee Lake swimming beaches as grab samples by the NDEQ
 
-## Summary of major results
+## Pawnee Lake Reservoir
 
-1. **Temporal lake properties**
-2. **ELISA ADDA analysis**
-3. **LC/MS analysis**
-4. **Statistical correlation**
+```{r, fig.height = 4, fig.width=4}
+print(pawnee.map)
+```
 
 \newpage
 
@@ -261,9 +311,8 @@ dat = dat[dat$yr > 1996,]
 
 
 ### Air and water temperatures for the Pawnee Lake region from 1996 - 2016
-Air temperature (minimum and maximum) data were obtained from NOAA; Water temperature readings were obtained from USACOE.
 
-```{r temp}
+```{r temp, fig.height=6, fig.cap = "Air temperatures and water temperature for the Pawnee Lake region and reservoir."}
 ## Test out some data
 w.temp <- dat[dat$CharacteristicName == "Temperature, water",]
 a.temp.max <- noaa.dat[noaa.dat$TMAX != -9999,]
@@ -300,16 +349,151 @@ grid.arrange(p,p1,p2)
 
 ```
 
+### Observattions
+1. Air temperature (minimum and maximum) data were obtained from NOAA; Water temperature readings were obtained from USACOE.
+2. Both air and water data follow similar temporal trends with no significant climatic deviations between years. 
+
 \newpage
 
-### Nutrients and chlorophyll
+
+```{r}
+# Pull out all nitrogen related categories in dataset
+nit.cat <- c("Ammonia and ammonium", "Nitrate", "Nitrite", "Organic Nitrogen","Nitrogen, mixed forms (NH3), (NH4), organic, (NO2) and (NO3)","Ammonia-nitrogen","Kjeldahl nitrogen")
+
+# subset data
+nit <- dat[dat$CharacteristicName %in% nit.cat,]
+phs <- dat[dat$CharacteristicName %in% c("Phosphate-phosphorus", "Phosphate", "Phosphorus"),]
+mtls <- dat[dat$CharacteristicName %in% c("Copper", "Iron", "Manganese", "Strontium", "Zinc", "Calcium", "Magnesium"),]
+
+phys.cat <- c("Temperature, water", "color","Specific conductance", "pH", "Alkalinity", "Temperature, air", "Depth, Secchi disk depth","Wind direction (direction from, expressed 0-360 deg)", "Dissolved oxygen (DO) ", "Total suspended solids")
+
+phys <- dat[dat$CharacteristicName %in% phys.cat,]
+
+```
+
+
+### Temporal Reservior Characteristics 2001 - 2009
+```{r, fig.height = 4, fig.cap="Measured physical characteristics of Pawnee Lake."}
+phys$yr <- as.factor(phys$yr)
+
+phys <- phys[phys$CharacteristicName != "Temperature, water" & phys$CharacteristicName !="Temperature, air",]
+
+ggplot(phys, aes(jul.dat, ResultMeasureValue, col = yr)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("Julian Date") +
+  facet_wrap(~CharacteristicName, scales = "free_y")
+
+```
+
+#### Observations
+1. Data used in these plots were obstained from the National Water Quality Portal and contain information from projects at the NDEQ, USACOE, USGS, and USEPA.
+2. Only notable temporal trend in the collected physical data is a decline in Specific conductance through the year.
+3. pH highly variable in summer months, which is likely due to rainfall events
 
 \newpage
+
+### Annual trends
+```{r, fig.cap = "Average annual trends from 2001-2009"}
+ggplot(phys, aes(yr, ResultMeasureValue, shape = CharacteristicName)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("year") +
+  geom_boxplot(fill = NA) +
+  facet_wrap(~CharacteristicName, scales = "free_y") + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0))
+```
+
+##Observations
+1. NOTE: The Secchi depth measurements are in both meters and inches. These values need to be converted to a standardized unit.
+
+
+\newpage
+
+### Nutrients
+
+####**Nitrogen**
+
+```{r ,fig.height = 4,fig.cap = "Nitrogen-related data from Pawnee Lake Reservoir between 2001-2009"}
+nit$yr <- as.factor(nit$yr)
+nit <- nit[nit$CharacteristicName != "Nitrate" & nit$CharacteristicName != "Nitrite",]
+p1 <- ggplot(nit, aes(jul.dat, ResultMeasureValue, col = yr, shape = CharacteristicName)) +
+  geom_line() +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("Julian Date") + ylab("Concentration (mg/L)") +
+  facet_wrap(~yr) +
+  theme(legend.position = "none")
+
+#Calculate the seasonal mean?
+p2 <- ggplot(nit, aes(yr, ResultMeasureValue, shape = CharacteristicName)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("year") + ylab("Concentration (mg/L)") +
+  geom_boxplot(fill = NA) +
+  facet_grid(~CharacteristicName) +
+  theme(legend.position = "none")
+print(p2)
+```
+
+###Observations
+1. Total nitrogen (as measured by Kjedahl digestion) drastically increased between 2003 and 2004. 
+
+\newpage
+
+####**Phosphorus**
+```{r ,fig.height = 4, fig.cap = "Phosphorus-related data from Pawnee Lake Reservoir between 2001-2009"}
+phs$yr <- as.factor(phs$yr)
+
+p1 <- ggplot(phs, aes(jul.dat, ResultMeasureValue, col = yr, shape = CharacteristicName)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("Julian Date") + ylab("Concentration (mg/L)")
+
+#Calculate the seasonal mean?
+p2 <- ggplot(phs, aes(yr, ResultMeasureValue, shape = CharacteristicName)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("year") + ylab("Concentration (mg/L)") +
+  geom_boxplot(fill = NA)+
+  theme(legend.position = "none")
+print(p2)
+```
+
+### Observations
+1. Total phosphorus remained relatively similar between 2001-2009. However, phosphorus concentrations in 2005 were much more variable than any other year.
+
+\newpage
+
+```{r metals , include = FALSE, fig.cap = "Metals-related data from Pawnee Lake Reservoir between 2001-2009"}
+mtls$yr <- as.factor(mtls$yr)
+
+## Add second y axis for different unit measure
+
+ggplot(mtls, aes(jul.dat, ResultMeasureValue, col = yr, shape = CharacteristicName)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("Julian Date") + ylab("Concentration (mg/L)")
+
+#Calculate the seasonal mean?
+ggplot(mtls, aes(yr, ResultMeasureValue, shape = CharacteristicName)) +
+  geom_point() + 
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("year") + ylab("Concentration (mg/L)") +
+  geom_boxplot(fill = NA)
+
+```
+
+\newpage
+
+## Toxins
 
 ### NDEQ Total microcystins
-```{r ndeq-mic, fig.height=3,fig.width=6, fig.cap= "Total microcystin concentration (ug/ul) in Fremont, Pawnee, and Carter Lakes (2006-2008). Data provided by the Nebraska Department of Environmental Quality as part of the beach monitoring program"}
+
+```{r ndeq-mic, fig.height=6,fig.width=7.5, fig.cap= "Total microcystin concentration (ug/L) as measured by ELISA in Fremont, Pawnee, and Carter Lakes (2006-2008). Data provided by the Nebraska Department of Environmental Quality as part of the beach monitoring program. Concentrationis greater than 20 ug/L (red line) result in beach closings."}
 ndeqmic <- read.csv("./data/ndeq_toxindata.csv", header = T)
-str(ndeqmic)
+#str(ndeqmic)
 
 ndeqmic$tmp <- as.Date(ndeqmic$sample.date, format = "%Y-%m-%d")
 ndeqmic$yr <- as.factor(format(ndeqmic$tmp,'%Y'))                      
@@ -318,28 +502,57 @@ ndeqmic$jul.dat <- yday(ndeqmic$tmp)
 ndeqmic <- ndeqmic[-grep(">", ndeqmic$mic.con),]
 ndeqmic$mic.con <- as.numeric(as.character(ndeqmic$mic.con))
 
-p = ggplot(ndeqmic, aes(jul.dat,mic.con, col = yr, shape = station.number)) +
-  geom_hline(yintercept = 20, col = "red", lty = 2, lwd = 1) +
+p = ggplot(ndeqmic, aes(jul.dat,mic.con, col = yr)) +
+  geom_hline(yintercept = 20, col = "red", lty = 1, lwd = 1) +
   geom_point(cex = 2) +
   scale_color_grey() +
   xlab("Julian date") + ylab("Microcystin Concentration (ug/l)") +
-  facet_grid(~station.number)
+  facet_wrap(~lake, ncol = 2)
+p$data$lake <- factor(p$data$lake, levels = c("PAWNEE WEST","PAWNEE EAST","FREMONT WEST", "FREMONT EAST","CARTER"))
 
 print(p)
+```
+
+###Observations
+1. Fremont and Carter Lakes show a loss of microcystin detection between 2007 and 2008. Fremont Lake was treated with alum at the end of the 2007 season and Carter in 2010.  
+
+\newpage
+
+## Abiotic contributions to microcystin concentrations
+```{r , eval = FALSE}
+# make relative abundance matrix of toxins
+
+tox <- 
+
 ```
 
 \newpage
 
 ### WSL Algal toxins
-```{r wsc-mic, fig.height=3,fig.width=6, fig.cap= "Algal toxins"}
+```{r wsc-mic}
 wscmic <- read.csv("./data/wsc_toxindata.csv", header = T)
-str(wscmic)
+#str(wscmic)
 
 wscmic[is.na(wscmic)] <-0
 
 wscmic <- wscmic[,c(3:13)]
 wscmic$Microcystin.total <- rowSums(wscmic[,5:9])
+```
 
+```{r CrossReactCorrection}
+#corrected = uncorrected LC/MS/MS concentration (ug/l)*ELISA cross-reactivity correction
+
+wscmic$mcla <- wscmic$Microcystin.LA*.48
+wscmic$mclf <- wscmic$Microcystin.LF*.72
+wscmic$mclr <- wscmic$Microcystin.LR
+wscmic$mclw <- wscmic$Microcystin.LW*1.02
+wscmic$mcrr <- wscmic$Microcystin.RR*.53
+wscmic$mc.total.cor <- rowSums(wscmic[,13:17])
+
+
+```
+
+```{r, fig.height = 6, fig.width=7.5,fig.cap="Corrected total microcystin concentration (red, ug/L) and individual microcystin congener concentrations as measured by LC/MS/MS in Fremont, Pawnee, and Carter Lakes (2006-2008). Concentrationis greater than 20 ug/L (red line) result in beach closings."}
 require(reshape2)
 m <- melt(wscmic, ids = c("lake","Collection_Date","yr","tmp","jul.dat"))
 
@@ -352,85 +565,101 @@ m <- m[c(grep("PAWNEE",m$lake),
            grep("FREMONT", m$lake)),]
 m$lake <- droplevels(m$lake)
 
-m1 <- m[grep("Microcystin",m$variable),]
+m1 <- m[grep("mc.",m$variable),]
 
 p1 = ggplot(m1, aes(jul.dat, value, col = variable, shape = yr)) +
-  geom_hline(yintercept = 20, col = "red", lty = 2, lwd = 1) +
+  geom_hline(yintercept = 20, col = "red", lty = 1, lwd = 1) +
   geom_point(cex = 2) +
   scale_color_grey() +
-  geom_point(data = m1[m1$variable == "Microcystin.total",],
+  geom_point(data = m1[m1$variable == "mc.total.cor",],
              aes(jul.dat,value, shape = yr), pch = 20, col = "red", cex = 3) +
-  xlab("Julian date") + ylab("Concentration (ug/l)") +
-  facet_grid(~lake)
+  xlab("Julian date") + ylab("Concentration (ug/L)") +
+  facet_wrap(~lake, ncol = 2, scales = "free_y")
 
-#print(p1)
+p1$data$lake <- factor(p1$data$lake, levels = c("PAWNEE WEST","PAWNEE EAST","FREMONT WEST","FREMONT EAST","CARTER"))
 
+print(p1)
+```
+
+```{r ,fig.height = 6, fig.width=7.5, fig.cap=""}
 p2 = ggplot(m1, aes(jul.dat, value, col = variable, shape = yr)) +
-  geom_hline(yintercept = 20, col = "red", lty = 2, lwd = 1) +
+  geom_hline(yintercept = 20, col = "red", lty = 1, lwd = 1) +
   geom_point(cex = 2) +
   scale_color_grey() +
   geom_point(data = m1[m1$variable == "Microcystin.total",],
              aes(jul.dat,value, shape = yr), pch = 20, col = "red", cex = 3) +
-  xlab("Julian date") + ylab("Concentration (ug/l)") +
+  xlab("Julian date") + ylab("Concentration (ug/L)") +
   ylim(0,20)+
-  facet_grid(~lake)
+  facet_wrap(~lake, ncol = 2, scales = "free_y")
 
-#print(p2)
+p2$data$lake <- factor(p2$data$lake, levels = c("PAWNEE WEST","PAWNEE EAST","FREMONT WEST","FREMONT EAST","CARTER"))
 
-grid.arrange(p1,p2)
+print(p2)
+
+#grid.arrange(p1,p2)
 ```
 
 \newpage
 
 ### Other algal toxins
 
-```{r toxin-other}
+```{r toxin-other, fig.cap="Other cyanotoxins detected by LC/MS. Only concentrations greater than the detection limit have been included on log base 10 y scale."}
 m2 <- m[-grep("Microcystin",m$variable),]
+m2 <- m2[-grep("mc",m2$variable),]
 
 lvls <- read.csv("./data/state_regs.csv", header = T)
 lvls <- lvls[3:5,3:4]
 lvls$toxin <- c("Anatoxin.A","Cylindrospermopsin","Saxitoxin")
 
-p1 = ggplot(m2, aes(jul.dat, value, col = yr, shape = lake)) +
+p1 = ggplot(m2[m2$value >0,], aes(jul.dat, value, col = yr, shape = lake)) +
   #geom_hline(data = lvls, yintercept = lvls$PHA, lwd = 1)+
   #geom_hline(data = lvls, yintercept = lvls$NCA, lwd = 2)+
   geom_point(cex = 2) +
   scale_color_discrete(c("red","blue","green"))+
   xlab("Julian date") + ylab("Concentration (ug/L)") +
-  facet_grid(~variable)
+  facet_grid(~variable, scales = "free_y") + 
+  scale_y_log10()
 
-#print(p1)
+print(p1)
 
-p2 = ggplot(m2, aes(jul.dat, value, col = yr, shape = lake)) +
+p2 = ggplot(m2[m2$value >0,], aes(jul.dat, value, col = yr, shape = lake)) +
   geom_point(cex = 2) +
   scale_color_discrete(c("red","blue","green")) +
   xlab("Julian date") + ylab("Concentration (ug/L)") +
   ylim(0,15)+
-  facet_grid(~variable)
+  facet_grid(~variable, scales = "free_y")
 
 #print(p2)
 
 
-p3 = ggplot(m2, aes(jul.dat, value, col = yr, shape = lake)) +
+p3 = ggplot(m2[m2$value > 0,], aes(jul.dat, value, col = yr, shape = lake)) +
   geom_point(cex = 2) +
   scale_color_discrete(c("red","blue","green")) +
   xlab("Julian date") + ylab("Concentration (ug/L)") +
   ylim(0,1)+
-  facet_grid(~variable)
+  facet_grid(~variable, scales = "free_y")
 
 #print(p3)
 
-grid.arrange(p1,p2,p3)
+#grid.arrange(p1,p2,p3)
 
 
 ```
 
-The State of Nebraska only monitors the concentration of microcystins as an aggregate group and issues health advisories for recreational water bodies as a total toxin concentrations greater than 20 ug/L. Other states issue both *public health advisories* (PHA) and *no contact advisories* (NCA) depending on the type of cyanobacterial toxin. For example, Ohio regularly tracks microcystin-LR, anatoxin-a, saxitoxin, and cylindrospermopsin and issues both PHA and NCA throughout the season (Table 1).
+#### Observations
+
+1. The State of Nebraska only monitors the concentration of microcystins as an aggregate group and issues health advisories for recreational water bodies as a total toxin concentrations greater than 20 ug/L. Other states issue both *public health advisories* (PHA) and *no contact advisories* (NCA) depending on the type of cyanobacterial toxin. For example, Ohio regularly tracks microcystin-LR, anatoxin-a, saxitoxin, and cylindrospermopsin and issues both PHA and NCA throughout the season (Table 1, next page).
+2. **Anatoxin a**: The OH PHA advisory for anatoxin a is 80 ug/L; In this study, `r length(m2$value[m2$variable == "Anatoxin.A" & m2$value >= 80])` samples (~ `r round(length(m2$value[m2$variable == "Anatoxin.A" & m2$value >= 80])/length(m2$value[m2$variable == "Anatoxin.A"]) * 100, digits = 1)` %) contained an anatoxin concentration greater than the PHA advisory (mean =`r round(mean(m2$value[m2$variable == "Anatoxin.A"]), digits = 1)` ug/L). The OH NCA advisory is 300 ug/L; In these samples, `r length(m2$value[m2$variable == "Anatoxin.A" & m2$value >=300])` samples (~ `r round(length(m2$value[m2$variable == "Anatoxin.A" & m2$value >= 300])/length(m2$value[m2$variable == "Anatoxin.A"]) * 100, digits = 1)` %) contained a anatoxin concentration greater than the NCA advisory.
+3. **Cylindrospermopsin**: The OH PHA advisory for cylindrospermopsin is 5 ug/L; In this study, `r length(m2$value[m2$variable == "Cylindrospermopsin" & m2$value >=5])` samples (~ `r round(length(m2$value[m2$variable == "Cylindrospermopsin" & m2$value >= 5])/length(m2$value[m2$variable == "Cylindrospermopsin"]) * 100, digits =1)` %) contained a cylindrospermopsin concentration greater than the PHA advisory (mean = `r round(mean(m2$value[m2$variable == "Cylindrospermopsin"]),digits = 1)` ug/L). The OH NCA advisory for cylindrospermopsin is 20 ug/L; In these samples, `r length(m2$value[m2$variable == "Cylindrospermopsin" & m2$value >=20])` samples (~ `r round(length(m2$value[m2$variable == "Cylindrospermopsin" & m2$value >= 20])/length(m2$value[m2$variable == "Cylindrospermopsin"]) * 100, digits = 1)` %) contained a cylindrospermopsin concentration greater than the NCA advisory.
+4. **Saxitoxin**: The OH PHA advisory for saxitoin is 0.8 ug/L; In this study, `r length(m2$value[m2$variable == "Saxitoxin" & m2$value >=0.8])` samples (~ `r round(length(m2$value[m2$variable == "Saxitoxin" & m2$value >= 0.8])/length(m2$value[m2$variable == "Saxitoxin"]) * 100, digits = 1)` %) contained a saxitoxin concentration greater than the PHA advisory (mean = `r round(mean(m2$value[m2$variable == "Saxitoxin"]), digits = 1)` ug/L). The OH NCA advisory for saxitoin is 3 ug/L; In these samples, `r length(m2$value[m2$variable == "Saxitoxin" & m2$value >=3])` samples (~ `r round(length(m2$value[m2$variable == "Saxitoxin" & m2$value >= 3])/length(m2$value[m2$variable == "Saxitoxin"]) * 100, digits = 1)` %) contained a saxitoxin concentration greater than the NCA advisory.
+
+\newpage
 
 ```{r}
 regs <- read.csv("./data/state_regs.csv", header = TRUE)
 
 require(pander)
+set.caption("Selected state regulations for cyanotoxins.PHA = Personal Health Advisory; NCA = No Contact Advisory")
 pander(regs)
 ```
 
@@ -438,25 +667,53 @@ pander(regs)
 
 ### Methodological Comparison
 
-```{r mic-comp, fig.height=3,fig.width=6, fig.cap= "Algal toxins"}
+```{r mic-comp, fig.height=3,fig.width=6, fig.cap= "Relationship between total microcystin concentration as measured by LC/MS/MS and ELISA methods (n = 110). LC/MS/MS concentrations were calculated as the cross-reactivity corrected sum of each microcystin congener (-LA, -LF,-LR,-LW,-RR)"}
 #Merge data from NDEQ and WSC
 mic.merge <- merge(ndeqmic,wscmic, 
                    by.x = c("lake","sample.date"), 
                    by.y = c("lake","Collection_Date"))
 
-p1 = ggplot(mic.merge, aes(x = Microcystin.total, y = mic.con, col = lake, shape = lake)) +
-  geom_abline(intercept = 0, slope = 1, col = "red", lwd = 2, lty = 2) +
-  geom_point(cex = 2) +
-  xlab("LC/MS Microcystin Total Concentration (ug/L)") +
-  ylab("Abraxis ELISA ADDA Microcystin Total Concentration (ug/L") +
-  xlim(0,100) + ylim(0,100)
+p1 = ggplot(mic.merge, aes(x = mc.total.cor, y = mic.con, col = lake, shape = lake)) +
+  scale_x_log10()+
+  scale_y_log10() +
+  geom_abline(intercept = 0, slope = 1, col = "red", lwd = 1, lty = 1) +
+  geom_point(cex = 3) +
+  xlab("Total Corrected Microcystin by LC/MS/MS (ug/L)") +
+  ylab("Total Microcystin by ELISA (ug/L)") +
+  annotate("text",x = 135, y = 85,label = "1:1", col = "red")
 
 print(p1)
 
-cor(mic.merge$Microcystin.total, mic.merge$mic.con, method = "pearson")
+
+p2 = ggplot(mic.merge[mic.merge$mc.total.cor >0,], aes(x = mc.total.cor, y = mic.con, col = lake, shape = lake)) +
+  scale_x_log10()+
+  scale_y_log10() +
+  geom_abline(intercept = 0, slope = 1, col = "red", lwd = 1, lty = 1) +
+  geom_point(cex = 2) +
+  xlab("Total Corrected Microcystin by LC/MS/MS (ug/L)") +
+  ylab("Total Microcystin by ELISA (ug/L)")
+
+#print(p2)
+
+#cor(mic.merge$mc.total.cor, mic.merge$mic.con, method = "spearman")
+cortest <- cor.test(mic.merge$mc.total.cor, mic.merge$mic.con, method = "spearman", conf.level = 0.95)
+
 
 ```
 
-The Abraxis ELISA ADDA kit quantifies the concentration of both microcystins and nodularins. 
+#### Observations
 
-Total microcystin concentration is based on the detection and quantification of five congers (LR, LW, RR, LR, and LA). 
+1. Large number of measurements where LC/MS did not detect microcystins above the detection limit. We tested for five of the most common microcystin congeners which have standards currently available for the LC/MS/MS analysis. To date, there are over 80 congeners of microcystin that have been reported. ELISA ADDA kits have a broad specificity that may either be detecting other microcystin congers or providing false positive results.
+2. Seven of the samples (isolated from Fremont and Carter Lakes) contained higher concentrations of microcystins than detected by ELISA. These samples also contained high concentrations of anatoxin a, cylindrospermopsin, and saxitoxin. 
+
+```{r}
+int <- mic.merge[mic.merge$mic.con < 10 & mic.merge$mc.total.cor > 25,c(1,2,7,11,12,18,26)]
+int <- cbind(int[,1:3],int[,7],int[,4:6])
+colnames(int) <- c("Lake","Sample Date","ELISA","LC/MS","Anatoxin A", "Cylindro", "Saxitoxin")
+
+row.names(int) <- NULL
+pander(int)
+```
+
+3. ELISA and cross-reactivity corrected LC/MS/MS concentrations were strongly correlated (rho = `r cortest[[4]]`, p = `r cortest[[3]]`, n = `r dim(mic.merge)[1]`).
+4. Nineteen samples (`r round(19/110*100,digits =1)`) contained more than one microcystin congener.
