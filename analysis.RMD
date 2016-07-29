@@ -114,21 +114,21 @@ all.stamen1 <- get_map(location = c( -96.487705,41.188520), zoom = 7,
 
 all.map1 <- ggmap(all.stamen1, extent = "panel",legend = "right") +
   geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
+             col = "grey", bg = "red" ,pch = 21, cex =3) +
   geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
+             pch = 22, bg = "black" , col = "grey", cex = 3) +
   xlab("Longitude") + ylab("Latitude") +
   theme(panel.border = element_rect(fill = NA))
 #print(all.map1)
 
-all.stamen2 <- get_map(location = c( -96.487705,41.188520), zoom = 9,
+all.stamen2 <- get_map(location = c(-96.318667,41.084526), zoom = 9,
                        maptype = "toner", source = "stamen")
 
 all.map2 <- ggmap(all.stamen2, extent = "panel",legend = "right") +
   geom_point(data = smp.points, aes(Longitude, Latitude), 
-             col = "red", pch = 19, cex =3) +
+             col = "grey",bg = "red", pch = 21, cex =4) +
   geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
-             pch = 22, col = "black", cex = 3) +
+             pch = 22, col = "grey", bg = "black", cex = 4) +
   xlab("Longitude") + ylab("Latitude") +
   theme(panel.border = element_rect(fill = NA))
 print(all.map2)
@@ -151,6 +151,8 @@ pawnee.map <- ggmap(pawnee.stamen, extent = "panel",legend = "right") +
              col = "red", pch = 19, cex =3) +
   #geom_text(data = smp.points, aes(Longitude, Latitude), label= smp.points$mic.lab, 
   #          nudge_y = -0.003, nudge_x = c(0.002, -0.002), col = "red") +
+    geom_point(data = ndeq.stn, aes(LongitudeMeasure, LatitudeMeasure), 
+             col = "red", pch = 19, cex =3) +
   geom_point(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), 
              pch = 22, col = "black", cex = 2) +
   #geom_text(data = noaa.dat, aes(x = LONGITUDE, y = LATITUDE), label= noaa.dat$STATION, 
@@ -298,15 +300,25 @@ require(lubridate)
 require(ggplot2)
 
 dat$tmp <- as.Date(dat$ActivityStartDate, format = "%Y-%m-%d") #Converts data to date structure
-dat$yr <- as.numeric(format(dat$tmp,'%Y'))                      #Time is now numeric
+dat$yr <- as.factor(as.numeric(format(dat$tmp,'%Y')))                      #Time is now numeric
 dat$jul.dat <- yday(dat$tmp)                                  #Time is now in Julian
 
+#subset data for pawnee lake
+dat = dat[grep("PAW",dat$MonitoringLocationIdentifier),]
+dat = dat[dat$yr >= 1996,]
+
+#subset data for pawnee
 noaa.dat$DATE <- as.factor(noaa.dat$DATE)
 noaa.dat$tmp <- as.Date(noaa.dat$DATE, format = "%Y%m%d")
-noaa.dat$yr <- as.numeric(format(noaa.dat$tmp,'%Y'))                      #Time is now numeric
-noaa.dat$jul.dat <- yday(noaa.dat$tmp)
+noaa.dat$yr <- as.factor(as.numeric(format(noaa.dat$tmp,'%Y')))  
+noaa.dat$mo <- as.factor(as.numeric(format(noaa.dat$tmp,'%m')))  
 
-dat = dat[dat$yr > 1996,]
+#Time is now numeric
+noaa.dat$jul.dat <- yday(noaa.dat$tmp)
+noaa.dat <- noaa.dat[grep("LINCOLN",noaa.dat$STATION_NAME),]
+
+
+
 ```
 
 
@@ -314,27 +326,37 @@ dat = dat[dat$yr > 1996,]
 
 ```{r temp, fig.height=6, fig.cap = "Air temperatures and water temperature for the Pawnee Lake region and reservoir."}
 ## Test out some data
-w.temp <- dat[dat$CharacteristicName == "Temperature, water",]
+w.temp <- dat[dat$CharacteristicName == "Temperature, water" | dat$CharacteristicName == "Microcystin",]
 a.temp.max <- noaa.dat[noaa.dat$TMAX != -9999,]
 a.temp.min <- noaa.dat[noaa.dat$TMIN != -9999,]
-p = ggplot(a.temp.max, aes(jul.dat, TMAX, col = yr)) +
+p = ggplot(a.temp.max, aes(tmp, TMAX, col = yr)) +
+  geom_point() + 
+  #geom_boxplot() +
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("Year") + ylab("Temperature (C)") +
+  stat_summary(geom = "line", fun.y = "mean", lwd = 1, col = "black") +
+  ylim(-20,40)+ theme(legend.position = "none")
+p1 = ggplot(a.temp.min, aes(tmp, TMIN, col = yr)) +
   geom_point() + 
   #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
-  xlab("Julian Date") + ylab("Temperature (C)") +
-  stat_summary(geom = "line", fun.y = "mean", lwd = 2, col = "red") +
-  ylim(-20,40)
-p1 = ggplot(a.temp.min, aes(jul.dat, TMIN, col = yr)) +
+  xlab("Year") + ylab("Temperature (C)") +
+  stat_summary(geom = "line", fun.y = "mean", lwd = 1, col = "black") +
+  ylim(-20,40) + theme(legend.position = "none"))
+p2 = ggplot(w.temp[w.temp$CharacteristicName == "Temperature, water",], 
+            aes(tmp, ResultMeasureValue) +
+  geom_point() + 
+  geom_boxplot(fill = NA)+
+  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
+  xlab("Year") + ylab("Temperature (C)") +
+  #stat_summary(geom = "line", fun.y = "mean", lwd = 1, col = "red") +
+  ylim(0,40) + theme(legend.position = "none")
+p3 =  ggplot(w.temp, aes(tmp, ResultMeasureValue, col = yr)) +
   geom_point() + 
   #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
-  xlab("Julian Date") + ylab("Temperature (C)") +
-  stat_summary(geom = "line", fun.y = "mean", lwd = 2, col = "red") +
-  ylim(-20,40)
-p2 = ggplot(w.temp, aes(jul.dat, ResultMeasureValue, col = yr)) +
-  geom_point() + 
-  #geom_point(aes(a.temp$jul.dat, a.temp$ResultMeasureValue, col = yr),"blues") +
-  xlab("Julian Date") + ylab("Temperature (C)") +
-  stat_summary(geom = "line", fun.y = "mean", lwd = 1, col = "red") +
-  ylim(-20,40)
+  xlab("Year") + ylab("Temperature (C)") +
+  #stat_summary(geom = "line", fun.y = "mean", lwd = 1, col = "red") +
+  #ylim(0,40)+
+  facet_wrap(~CharacteristicName, scales = "free_y", ncol = 1)
 
 require(gridExtra)
 grid.arrange(p,p1,p2)
